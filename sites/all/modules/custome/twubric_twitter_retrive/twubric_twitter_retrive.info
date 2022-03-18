@@ -1,0 +1,6 @@
+name = Twubric Twitter retrive
+description = ritrive data and apply rubric 
+
+
+core = 7.x
+version = 7.x-1.1

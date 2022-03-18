@@ -1,0 +1,89 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function twubric_twitter_retrive_menu() {
+	$items = array();
+	  
+    $items['retrive_data'] = array(
+        'page callback' => 'twitter_followers_retrive',
+        'access arguments' => array('access content'),
+        'type' => MENU_CALLBACK,
+    );  
+
+	
+  return $items;
+ 
+}
+ 
+
+ 
+function twitter_followers_retrive(){
+
+global $user;
+global $base_url;
+
+
+
+$api_url = 'https://gist.githubusercontent.com/pandemonia/21703a6a303e0487a73b2610c8db41ab/raw/9667fc19a0f89193e894da7aaadf6a4b7758b45e/twubric.json';
+
+// Read JSON file
+$json_data = file_get_contents($api_url);
+
+// Decode JSON data into PHP array
+$response_data = json_decode($json_data);
+
+// Print data if need to debug
+//print_r($user_data);
+
+print '<pre>';
+print_r($response_data);
+print '</pre>';
+foreach ($response_data as $infobject) 
+      {
+
+     
+    $node = new stdClass();
+    $node->type = "twitter_followers";
+	$node->title = "My Follower -".$infobject->username;
+	$node->uid = 1;  
+    node_object_prepare($node); 
+    $node->language = LANGUAGE_NONE; 
+    
+
+echo date('Y-m-d H:i:s', $infobject->join_date).'<br>';
+
+//2007-09-15 00:00:00
+
+    $node->field_user_id[$node->language][]['value'] = $infobject->uid;
+    $node->field_user_name[$node->language][]['value'] = $infobject->username;
+    $node->field_fullname[$node->language][]['value'] = $infobject->fullname;
+    $node->field_twubric_total[$node->language][]['value'] = $infobject->twubric->total;
+    $node->field_twubric_friends[$node->language][]['value'] = $infobject->twubric->friends;
+    $node->field_twubric_influence[$node->language][]['value'] = $infobject->twubric->influence;
+    $node->field_twubric_chirpiness[$node->language][]['value'] = $infobject->twubric->chirpiness;
+
+$image_url = $infobject->image;
+$file_info = system_retrieve_file($image_url, 'public://', TRUE);
+if($file_info->fid){
+    $node->field_user_image[LANGUAGE_NONE]['0']['fid'] = $file_info->fid;//assign fid
+}
+$node->field_joined_date[$node->language][]['value'] = date('Y-m-d H:i:s', $infobject->join_date);
+
+//print_r($file);
+  node_save($node);
+}
+drupal_goto($base_url."/app/follwers");
+}
+
+//***********************user login redirect
+
+function twubric_twitter_retrive_user_login(&$edit, $account) {
+    
+  if (!isset($_POST['form_id']) || $_POST['form_id'] != 'user_pass_reset') {
+    if(in_array('twitter_user', $account->roles)) {
+      $_GET['destination'] = 'my-profile';
+    }
+  }
+}
